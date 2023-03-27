@@ -19,6 +19,8 @@ ECG_raw = importdata('day1-1.txt').data(1:N,6); %/(2.^10))-0.5)*3.3/1100;
 ECG_raw = 10000*((ECG_raw./(2.^10))-0.5)*(3.3/1100);
 ECG_raw = ECG_raw.';
 
+ECG_raw
+
 %Adding Noise to the signal
 n = 0:N-1;
 w_EMG = 257*2*pi;

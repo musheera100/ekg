@@ -32,10 +32,10 @@ for i in range(len(data)):
 
 # Initial data scaling (samples to V).
 # Scaling by 10 to make it a more typical ECG range
-
 for i in range(len(ECG_raw)):
-    ECG_raw[i] = 10000*((float(ECG_raw[i])/(pow(2, 10)))-0.5)*(3.3/1100)
-
+    #ECG_raw[i] = float(ECG_raw[i])
+    ECG_raw[i] = 1000000*((float(ECG_raw[i])/(pow(2, 10)))-0.5)*(3.3/1100)
+print(ECG_raw[0])
 
 
 # Adding Noise to the signal
@@ -49,7 +49,7 @@ ECG = [0]*len(ECG_raw)
 for i in range(len(ECG_raw)):
     Noise = 0.7*math.sin(w_EMG*i/fs) + math.sin(w_mains*i/fs)
     Noise = Noise + 4*math.sin(w_baseline_wander1*i/fs) + 4*math.cos(w_baseline_wander2*i/fs)
-    ECG[i] = ECG_raw[i] + Noise
+    ECG[i] = ECG_raw[i] + 0.0004*Noise
 
 
 # Deriving LP Butterworth Filter coefficients
@@ -75,7 +75,7 @@ ax1 = fig1.add_subplot(111)
 ax1.plot(ECG, color='r', linewidth=0.7)
 ax1.set_title('Before filtering')
 print((ntotal/fs)*fraction)
-plt.xlim([0, 7.5])
+plt.xlim([0, 7.5*1000])
 plt.show()
 
 
