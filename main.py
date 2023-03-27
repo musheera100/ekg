@@ -1,121 +1,156 @@
-# This is a sample Python script.
+# //////////////////////////////////////////////////////////////////////////
+# 3/27/2023
+# Defines Filter_DFIIt function
+# Filters a signal using a transposed DFII structure
+# //////////////////////////////////////////////////////////////////////////
+import Filter_DFIIt
+import math
+import csv
+import matplotlib.pyplot as plt
+import numpy as np
+pi = math.pi
 
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
-import wfdb
-from numpy import cos, sin, pi, absolute, arange
-from scipy.signal import kaiserord, lfilter, firwin, freqz
-from pylab import figure, clf, plot, xlabel, ylabel, xlim, ylim, title, grid, axes, show
+# Reading in Data
+ntotal = 30000
+fraction = 0.5  # fraction of samples to keep (runs slower with more samples)
+samples = int(ntotal*fraction)  # number of samples to keep
+fs = 1000  # Sampling frequency
 
-# Functions defined up here
-def print_hi(name):
-    # Use a breakpoint in the code line below to debug your script.
-    print(f'Hi, {name}')  # Press Ctrl+F8 to toggle the breakpoint.
+# Reading in data from the .txt file:
+ECG_raw = [0]  # importdata('day1-1.txt').data(1:samples,6); %/(2.^10))-0.5)*3.3/1100;
 
-if __name__ == '__main__': # Main function
-    print_hi('PyCharm')
-    ecg_record = wfdb.rdheader('100', pn_dir='mitdb')
-    # record = wfdb.rdrecord('lobachevsky-university-electrocardiography-database-1.0.1/data/1', sampfrom=800, channels=[0])
-    signals, fields = wfdb.rdsamp('lobachevsky-university-electrocardiography-database-1.0.1/data/1', sampfrom=800, channels=[0])
-    figure(4)
-    plot(signals)
-    # ------------------------------------------------
-    # Create a signal for demonstration.
-    # ------------------------------------------------
+#filename = 'day1-1.txt'
 
-    sample_rate = 500.0
-    nsamples = 2000
-    t = arange(nsamples) / sample_rate
-    x = cos(2*pi*1*t) + 5*sin(2*pi*60*t)
+file = open("ECG_day1_1.csv", "r")
+data = list(csv.reader(file, delimiter=","))
+file.close()
 
-    # Modifed from: https://scipy-cookbook.readthedocs.io/items/FIRFilter.html
-    # ------------------------------------------------
-    # Create a FIR filter and apply it to x.
-    # ------------------------------------------------
+ECG_raw = [0]*len(data)
 
-    # The Nyquist rate of the signal.
-    nyq_rate = sample_rate / 2.0
+for i in range(len(data)):
+    ECG_raw[i] = data[i][0]
 
-    # The desired width of the transition from pass to stop,
-    # relative to the Nyquist rate.  We'll design the filter
-    # with a 5 Hz transition width.
-    width = 5.0 / nyq_rate
+# Initial data scaling (samples to V).
+# Scaling by 10 to make it a more typical ECG range
 
-    # The desired attenuation in the stop band, in dB.
-    ripple_db = 60.0
-
-    # Compute the order and Kaiser parameter for the FIR filter.
-    N, beta = kaiserord(ripple_db, width)
-    print(f'N, {N}')
-    # The cutoff frequency of the filter.
-    cutoff_low_hz = 0.2
-    cutoff_high_hz = 40
-    # (cutoff_low_hz/nyq_rate, cutoff_high_hz/nyq_rate)
-    # Use firwin with a Kaiser window to create a lowpass FIR filter.
-    taps = firwin(N, (cutoff_low_hz/nyq_rate, cutoff_high_hz/nyq_rate), window=('kaiser', beta), pass_zero='bandpass')
-
-    # Use lfilter to filter x with the FIR filter.
-    filtered_x = lfilter(taps, 1.0, x)
-
-
-    # ------------------------------------------------
-    # Plot the FIR filter coefficients.
-    # ------------------------------------------------
-
-    figure(1)
-    plot(taps, 'bo-', linewidth=2)
-    title('Filter Coefficients (%d taps)' % N)
-    grid(True)
-
-    # ------------------------------------------------
-    # Plot the magnitude response of the filter.
-    # ------------------------------------------------
-
-    figure(2)
-    clf()
-    w, h = freqz(taps, worN=8000)
-    plot((w / pi) * nyq_rate, absolute(h), linewidth=2)
-    xlabel('Frequency (Hz)')
-    ylabel('Gain')
-    title('Frequency Response')
-    ylim(-0.05, 1.05)
-    grid(True)
-
-    # Upper inset plot.
-    # ax1 = axes([0.42, 0.6, .45, .25])
-    # plot((w / pi) * nyq_rate, absolute(h), linewidth=2)
-    # xlim(0.2, 50)
-    # ylim(0.8, 1.100)
-    # grid(True)
-
-    # Lower inset plot
-    #ax2 = axes([0.42, 0.25, .45, .25])
-    # plot((w / pi) * nyq_rate, absolute(h), linewidth=2)
-    # xlim(12.0, 20.0)
-    # ylim(0.0, 0.0025)
-    #grid(True)
-
-    # ------------------------------------------------
-    # Plot the original and filtered signals.
-    # ------------------------------------------------
-
-    # The phase delay of the filtered signal.
-    delay = 0.5 * (N - 1) / sample_rate
-
-    figure(3)
-    # Plot the original signal.
-    plot(t, x)
-    # Plot the filtered signal, shifted to compensate for the phase delay.
-    plot(t - delay, filtered_x, 'r-')
-    # Plot just the "good" part of the filtered signal.  The first N-1
-    # samples are "corrupted" by the initial conditions.
-    plot(t[N - 1:] - delay, filtered_x[N - 1:], 'g', linewidth=4)
-    title('Orginal waveform (blue) vs. Filtered waveform (green)')
-    xlabel('t')
-    grid(True)
-
-    show()
+for i in range(len(ECG_raw)):
+    ECG_raw[i] = 10000*((float(ECG_raw[i])/(pow(2, 10)))-0.5)*(3.3/1100)
 
 
 
-# See PyCharm help at https://www.jetbrains.com/help/pycharm/
+# Adding Noise to the signal
+#n = [0]*(samples-1)
+w_EMG = 257*2*pi
+w_mains = 60*2*pi
+w_baseline_wander1 = 0.05*2*pi
+w_baseline_wander2 = 0.07*2*pi
+
+ECG = [0]*len(ECG_raw)
+for i in range(len(ECG_raw)):
+    Noise = 0.7*math.sin(w_EMG*i/fs) + math.sin(w_mains*i/fs)
+    Noise = Noise + 4*math.sin(w_baseline_wander1*i/fs) + 4*math.cos(w_baseline_wander2*i/fs)
+    ECG[i] = ECG_raw[i] + Noise
+
+
+# Deriving LP Butterworth Filter coefficients
+# Coefficients for fc = 30Hz, n = 6 LP Filter
+b1 = [0.0495*1.0e-05, 0.2972*1.0e-05, 0.7430*1.0e-05, 0.9907*1.0e-05, 0.7430*1.0e-05, 0.2972*1.0e-05, 0.0495*1.0e-05]
+print(b1)
+a1 = [1.0000, -5.2719, 11.6199, -13.7027, 9.1161, -3.2434, 0.4821]
+print(a1)
+
+# Deriving HP Butterworth Filter coefficients
+# Coefficients for fc = 0.5Hz, n = 1 HP Filter
+b2 = [0.9984, -0.9984]
+a2 = [1.0000, -0.9969]
+
+# Filtering the ECG Signal
+#ECG_LP = Filter_DFIIt.filter_fpga_df2n(b1, a1, ECG)
+#ECG_BP = Filter_DFIIt.filter_fpga_df2t(b2, a2, ECG_LP)
+
+# Plotting "Golden" data
+# //////////////////////////////////////////////////////////////////////////
+fig1 = plt.figure()
+ax1 = fig1.add_subplot(111)
+ax1.plot(ECG, color='r', linewidth=0.7)
+ax1.set_title('Before filtering')
+print((ntotal/fs)*fraction)
+plt.xlim([0, 7.5])
+plt.show()
+
+
+"""
+f1 = figure("Position",[0,0,100,50]*72) # use a taller and wider figure size
+n = 0:(1/fs):(N-(1/fs))/fs #0 to 30 seconds, in increments of 1ms for Fs = 1kHz
+
+
+p1 = subplot(4,2,1);
+plot(n,ECG_raw);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG Unedited');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+p2 = subplot(4,2,3);
+plot(n,ECG);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG With Noise');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+p3 = subplot(4,2,5);
+plot(n,ECG_LP_Auto);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG LP Filter');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+p4 = subplot(4,2,7);
+plot(n,ECG_BP_Auto);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG BP Filter');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+# Plotting data filtered with custom functions
+# /////////////////////////////////////////////////////////////////////////
+
+p5 = subplot(4,2,2);
+plot(n,ECG_raw);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG Unedited');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+p6 = subplot(4,2,4);
+plot(n,ECG);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG With Noise');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+p7 = subplot(4,2,6);
+plot(n,ECG_LP);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG LP Filter w/ LP DF2n Function');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+p8 = subplot(4,2,8);
+plot(n,ECG_BP);
+xlabel('Time (seconds)');
+ylabel('ECG Reading (mV)');
+title('ECG BP Filter w/ HP DF2t function');
+xlim([0 (N/fs)*fraction]);
+ylim([-6 6]);
+
+"""
+
+
