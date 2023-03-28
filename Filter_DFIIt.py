@@ -18,11 +18,11 @@ def filter_fpga_df2t(b, a, x):
     # Looping through x data to be filtered
     for i in range(len(x)):
         x_i = x[i]  # Current value of x
-        y_i = b[1]*x_i + shift_reg_v[k-1]
+        y_i = b[0]*x_i + shift_reg_v[k-2]
         # Tapped Delay Line + MAC
-        for j in range(k-1, -1, 2):
-            shift_reg_v[j] = shift_reg_v[j-1]+x_i*b[k-j+1]-y_i*a[k-j+1]
-        shift_reg_v[1] = x_i*b[k] - y_i*a[k]
+        for j in range(k-2, 0, -1):
+            shift_reg_v[j] = shift_reg_v[j-1]+x_i*b[k-j-1]-y_i*a[k-j-1]
+        shift_reg_v[0] = x_i*b[k-1] - y_i*a[k-1]
         y[i] = y_i
     return y
 

@@ -17,26 +17,26 @@ samples = int(ntotal*fraction)  # number of samples to keep
 fs = 1000  # Sampling frequency
 
 # Reading in data from the .txt file:
-ECG_raw = [0]  # importdata('day1-1.txt').data(1:samples,6); %/(2.^10))-0.5)*3.3/1100;
+# importdata('day1-1.txt').data(1:samples,6); %/(2.^10))-0.5)*3.3/1100;
 
 #filename = 'day1-1.txt'
 
-file = open("ECG_day1_1.csv", "r")
+file = open("ECG_good.csv", "r")
 data = list(csv.reader(file, delimiter=","))
 file.close()
 
-ECG_raw = [0]*len(data)
+ECG_raw = [0]*len(data[0])
 
-for i in range(len(data)):
-    ECG_raw[i] = data[i][0]
+for i in range(len(data[0])):
+    ECG_raw[i] = data[0][i]
 
 # Initial data scaling (samples to V).
 # Scaling by 10 to make it a more typical ECG range
-for i in range(len(ECG_raw)):
-    #ECG_raw[i] = float(ECG_raw[i])
-    ECG_raw[i] = 1000000*((float(ECG_raw[i])/(pow(2, 10)))-0.5)*(3.3/1100)
-print(ECG_raw[0])
 
+for i in range(len(ECG_raw)):
+    ECG_raw[i] = float(ECG_raw[i])
+    #ECG_raw[i] = 1000000*((float(ECG_raw[i])/(pow(2, 10)))-0.5)*(3.3/1100)
+#print(ECG_raw[0])
 
 # Adding Noise to the signal
 #n = [0]*(samples-1)
@@ -52,6 +52,7 @@ for i in range(len(ECG_raw)):
     ECG[i] = ECG_raw[i] + 0.0004*Noise
 
 
+
 # Deriving LP Butterworth Filter coefficients
 # Coefficients for fc = 30Hz, n = 6 LP Filter
 b1 = [0.0495*1.0e-05, 0.2972*1.0e-05, 0.7430*1.0e-05, 0.9907*1.0e-05, 0.7430*1.0e-05, 0.2972*1.0e-05, 0.0495*1.0e-05]
@@ -65,17 +66,30 @@ b2 = [0.9984, -0.9984]
 a2 = [1.0000, -0.9969]
 
 # Filtering the ECG Signal
-#ECG_LP = Filter_DFIIt.filter_fpga_df2n(b1, a1, ECG)
+test = [3.7949, 4.9222, 4.5084, 4.0975, 4.9791, 5.4940, 4.4490, 3.6770, 4.2008, 4.2620]
+print(test)
+ECG_LP = Filter_DFIIt.filter_fpga_df2t(b1, a1, ECG_raw)
+print(ECG_LP)
 #ECG_BP = Filter_DFIIt.filter_fpga_df2t(b2, a2, ECG_LP)
 
 # Plotting "Golden" data
 # //////////////////////////////////////////////////////////////////////////
 fig1 = plt.figure()
-ax1 = fig1.add_subplot(111)
-ax1.plot(ECG, color='r', linewidth=0.7)
+ax1 = fig1.add_subplot(311)
+ax1.plot(ECG_raw, color='r', linewidth=0.7)
 ax1.set_title('Before filtering')
-print((ntotal/fs)*fraction)
 plt.xlim([0, 7.5*1000])
+
+ax2 = fig1.add_subplot(312)
+ax2.plot(ECG_LP, color='r', linewidth=0.7)
+ax2.set_title('After filtering with LP')
+plt.xlim([0, 7.5*1000])
+
+ax3 = fig1.add_subplot(313)
+ax3.plot(ECG_raw, color='r', linewidth=0.7)
+ax3.set_title('After filtering with HP')
+plt.xlim([0, 7.5*1000])
+
 plt.show()
 
 

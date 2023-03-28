@@ -30,14 +30,15 @@ Noise = 0.7*sin(w_EMG*n/fs) + sin(w_mains*n/fs) + 4*sin(w_baseline_wander1*n/fs)
 ECG = ECG_raw + Noise;
 
 ECG_scaled = ECG*1000;
+test = int32(ECG_scaled(1:5))
 
 %csvwrite('ECG_good.csv',ECG,1,0)
 
 % Deriving LP Buttersworth Filter coefficients
 fc1 = 30;
-[b1,a1] = butter(6,fc1/(fs/2),'low')
-b1_int = int32(b1*(2^25));
-b2_int = int32(a1*(2^25));
+[b1,a1] = butter(6,fc1/(fs/2),'low');
+
+
 % Deriving HP Buttersworth Filter coeffcients
 fc2 = 0.5;
 [b2,a2] = butter(1,fc2/(fs/2),'High');
@@ -46,8 +47,8 @@ fc2 = 0.5;
 ECG_LP_Auto = filter(b1,a1,ECG);
 ECG_BP_Auto = filter(b2,a2,ECG_LP_Auto);
 
-ECG_LP = filter_FPGA_DF2t(b1,a1, ECG_scaled);
-ECG_BP = filter_FPGA_DF2t(b2,a2,ECG_LP);
+ECG_LP = filter_FPGA_DF2n(b1,a1, ECG_scaled);
+ECG_BP = filter_FPGA_DF2n(b2,a2,ECG_LP);
 
 
 %Plotting "Golden" data
@@ -126,16 +127,10 @@ ylim([-6000 6000]);
 %//////////////////////////////////////////////////////////////////////////
 % Normal DF2 Filter Function
 function y = filter_FPGA_DF2n(b,a,x)
-sf = 2^25; %2^25; %defining scaling factor
-
-b = double(int32(b*sf)) % scaling up coefficients
-a = double(int32(a*sf))
-%b = int32(b*sf) % scaling up coefficients
-%a = int32(a*sf)
-
+b = b*2^25; % scaling up 
+a = a*2^25;
 % finding K = # delay terms needed for DFII structure
 N = length(a); 
-
 M = length(b); 
 K = max(N,M);
 shift_reg_in = zeros(K,1); % Defines a shift register of length K
@@ -158,7 +153,7 @@ for i = 1:length(x)
     for k = K:-1:2
         y_i = y_i - a(k)*shift_reg_out(k) + b(k)*shift_reg_in(k);
     end
-    y_i = y_i/sf; %scaling down output
+    y_i = y_i/(2^25); %scaling back down
     shift_reg_out(1) = y_i;
     y(i) = y_i;
 end
@@ -170,9 +165,8 @@ end
 % Transposed DF2 Filter Function
 function y = filter_FPGA_DF2t(b,a,x)
 % finding K = # delay terms needed for DFII structure
-sf = 2^25;
-b = double(int32(b*sf));
-a = double(int32(a*sf));
+b = int32(b*2^25);
+a = int32(a*2^25);
 N = length(a); 
 M = length(b); 
 K = max(N,M);
@@ -183,7 +177,7 @@ y = zeros(length(x),1); % Defining output y array
 for i = 1:length(x)
     x_i = x(i); % Current value of x
 
-    y_i = (b(1)*x_i + shift_reg_v(K-1))/(sf);
+    y_i = (b(1)*x_i + shift_reg_v(K-1))/(2^25);
     % Tapped Delay Line + MAC
     for j = K-1:-1:2
         %display(["j: " j])
