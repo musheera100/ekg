@@ -29,18 +29,23 @@ w_baseline_wander2 = 0.07*2*pi;
 Noise = 0.7*sin(w_EMG*n/fs) + sin(w_mains*n/fs) + 4*sin(w_baseline_wander1*n/fs) + 4*cos(w_baseline_wander2*n/fs);
 ECG = ECG_raw + Noise;
 
-ECG_scaled = ECG*1000;
+ECG_scaled = ECG*1000*1000;
+ECG_scaled(1:10)
 
 %csvwrite('ECG_good.csv',ECG,1,0)
 
 % Deriving LP Buttersworth Filter coefficients
 fc1 = 30;
-[b1,a1] = butter(6,fc1/(fs/2),'low')
-b1_int = int32(b1*(2^25));
-b2_int = int32(a1*(2^25));
+[b1,a1] = butter(6,fc1/(fs/2),'low');
+b1_int = int32(b1*(2^24))
+a1_int = int32(a1*(2^24))
+
+
 % Deriving HP Buttersworth Filter coeffcients
 fc2 = 0.5;
 [b2,a2] = butter(1,fc2/(fs/2),'High');
+b2_int = int32(b2*(2^24))
+a2_int = int32(a2*(2^24))
 
 % Filtering the ECG Signal
 ECG_LP_Auto = filter(b1,a1,ECG);
@@ -49,6 +54,7 @@ ECG_BP_Auto = filter(b2,a2,ECG_LP_Auto);
 ECG_LP = filter_FPGA_DF2t(b1,a1, ECG_scaled);
 ECG_BP = filter_FPGA_DF2t(b2,a2,ECG_LP);
 
+BP_OUTPUT = ECG_BP(1:10)
 
 %Plotting "Golden" data
 %//////////////////////////////////////////////////////////////////////////
@@ -112,7 +118,7 @@ xlabel('Time (seconds)');
 ylabel('ECG Reading (mV)');
 title('ECG LP Filter w/ LP DF2n Function');
 xlim([0 (N/fs)*fraction]);
-ylim([-6000 6000]);
+ylim([-6000000 6000000]);
 
 p8 = subplot(4,2,8);
 plot(n,ECG_BP);
@@ -120,7 +126,7 @@ xlabel('Time (seconds)');
 ylabel('ECG Reading (mV)');
 title('ECG BP Filter w/ HP DF2t function');
 xlim([0 (N/fs)*fraction]);
-ylim([-6000 6000]);
+ylim([-6000000 6000000]);
 
 
 %//////////////////////////////////////////////////////////////////////////
@@ -128,12 +134,12 @@ ylim([-6000 6000]);
 function y = filter_FPGA_DF2n(b,a,x)
 sf = 2^25; %2^25; %defining scaling factor
 
-b = double(int32(b*sf)) % scaling up coefficients
-a = double(int32(a*sf))
+b = double(int32(b*sf)); % scaling up coefficients
+a = double(int32(a*sf));
 %b = int32(b*sf) % scaling up coefficients
 %a = int32(a*sf)
 
-% finding K = # delay terms needed for DFII structure
+% finding K = # delay terms needed for DFII s``tructure
 N = length(a); 
 
 M = length(b); 
@@ -171,8 +177,8 @@ end
 function y = filter_FPGA_DF2t(b,a,x)
 % finding K = # delay terms needed for DFII structure
 sf = 2^25;
-b = double(int32(b*sf));
-a = double(int32(a*sf));
+b = double(int64(b*sf));
+a = double(int64(a*sf));
 N = length(a); 
 M = length(b); 
 K = max(N,M);
@@ -183,7 +189,7 @@ y = zeros(length(x),1); % Defining output y array
 for i = 1:length(x)
     x_i = x(i); % Current value of x
 
-    y_i = (b(1)*x_i + shift_reg_v(K-1))/(sf);
+    y_i = int64((b(1)*x_i + shift_reg_v(K-1))/(sf))
     % Tapped Delay Line + MAC
     for j = K-1:-1:2
         %display(["j: " j])
