@@ -30,22 +30,22 @@ Noise = 0.7*sin(w_EMG*n/fs) + sin(w_mains*n/fs) + 4*sin(w_baseline_wander1*n/fs)
 ECG = ECG_raw + Noise;
 
 ECG_scaled = ECG*1000*1000;
-ECG_scaled(1:10)
+%ECG_INPUT = ECG_scaled(1:10)
 
 %csvwrite('ECG_good.csv',ECG,1,0)
 
 % Deriving LP Buttersworth Filter coefficients
 fc1 = 30;
 [b1,a1] = butter(6,fc1/(fs/2),'low');
-b1_int = int32(b1*(2^24))
-a1_int = int32(a1*(2^24))
+b1_int = int32(b1*(2^24));
+a1_int = int32(a1*(2^24));
 
 
 % Deriving HP Buttersworth Filter coeffcients
 fc2 = 0.5;
 [b2,a2] = butter(1,fc2/(fs/2),'High');
-b2_int = int32(b2*(2^24))
-a2_int = int32(a2*(2^24))
+b2_int = int32(b2*(2^24));
+a2_int = int32(a2*(2^24));
 
 % Filtering the ECG Signal
 ECG_LP_Auto = filter(b1,a1,ECG);
@@ -54,7 +54,17 @@ ECG_BP_Auto = filter(b2,a2,ECG_LP_Auto);
 ECG_LP = filter_FPGA_DF2t(b1,a1, ECG_scaled);
 ECG_BP = filter_FPGA_DF2t(b2,a2,ECG_LP);
 
-BP_OUTPUT = ECG_BP(1:10)
+%LP_OUTPUT = ECG_LP(1:10);
+format long
+disp("b1[0] ")
+disp(b1(1));
+
+disp("First value of ECG Input")
+disp(ECG_scaled(1))
+
+disp("ECG LP Output 1st Term: ")
+disp(ECG_LP(1))
+
 
 %Plotting "Golden" data
 %//////////////////////////////////////////////////////////////////////////
@@ -131,7 +141,7 @@ ylim([-6000000 6000000]);
 
 %//////////////////////////////////////////////////////////////////////////
 % Normal DF2 Filter Function
-function y = filter_FPGA_DF2n(b,a,x)
+function y = filter_FPGA_DF2n_SCALED(b,a,x)
 sf = 2^25; %2^25; %defining scaling factor
 
 b = double(int32(b*sf)); % scaling up coefficients
@@ -174,7 +184,7 @@ end
 
 %//////////////////////////////////////////////////////////////////////////
 % Transposed DF2 Filter Function
-function y = filter_FPGA_DF2t(b,a,x)
+function y = filter_FPGA_DF2t_SCALED(b,a,x)
 % finding K = # delay terms needed for DFII structure
 sf = 2^25;
 b = double(int64(b*sf));
@@ -189,7 +199,7 @@ y = zeros(length(x),1); % Defining output y array
 for i = 1:length(x)
     x_i = x(i); % Current value of x
 
-    y_i = int64((b(1)*x_i + shift_reg_v(K-1))/(sf))
+    y_i = int64((b(1)*x_i + shift_reg_v(K-1))/(sf));
     % Tapped Delay Line + MAC
     for j = K-1:-1:2
         %display(["j: " j])
@@ -203,3 +213,36 @@ disp('filtering with DF2 transposed structure done')
 end
 
 %//////////////////////////////////////////////////////////////////////////
+
+
+%//////////////////////////////////////////////////////////////////////////
+% Transposed DF2 Filter Function
+function y = filter_FPGA_DF2t(b,a,x)
+% finding K = # delay terms needed for DFII structure
+N = length(a); 
+M = length(b); 
+K = max(N,M);
+shift_reg_v = zeros(K-1,1); % Defines a shift register of length K-1
+y = zeros(length(x),1); % Defining output y array
+
+% Looping through x data to be filtered
+for i = 1:length(x)
+    x_i = x(i); % Current value of x
+
+    y_i = b(1)*x_i + shift_reg_v(K-1);
+    % Tapped Delay Line + MAC
+    for j = K-1:-1:2
+        %display(["j: " j])
+        shift_reg_v(j) = shift_reg_v(j-1)+x_i*b(K-j+1)-y_i*a(K-j+1);
+    end
+    shift_reg_v(1) =  x_i*b(K) - y_i*a(K);
+    y(i) = y_i;
+end
+y = y.';
+disp('filtering with DF2 transposed structure done')
+end
+
+%//////////////////////////////////////////////////////////////////////////
+
+
+
