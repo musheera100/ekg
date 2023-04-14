@@ -10,6 +10,7 @@ PRELIMINARY FINAL REPORT: See Preliminary Project Report Folder
 
 
 
+
 PROJECT UPDATE 2: See Project Update 2 Folder.
 
 Filter_Testing.m is the MATLAB file used to derive the filter coefficients, and includes the iniital implementation of the DFII and DFI filter functions.
@@ -25,6 +26,8 @@ IIR_Filter_testb.cpp is a testbench for filter_df2t.cpp
 ECG_good.csv is the input ECG sequence used in the test bench, and ECG_out_gold.csv is the Golden Output for the test bench
 
 sma.m contains some additonal functions for further processing of the ECG signal after filtering
+
+
 
 
 PROJECT UPDATE 1:
