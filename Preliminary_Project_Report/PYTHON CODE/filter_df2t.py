@@ -1,7 +1,25 @@
+import csv
+import matplotlib.pyplot as plt
 
+csv_file_path = "ECG_good.csv"
+data = []
 
+with open(csv_file_path, newline='') as csv_file:
+    csv_reader = csv.reader(csv_file)
+    for row in csv_reader:
+        data.append(row)
+#print(data)
+x = [float(row[0]) for row in data]  # extract the x values
+y = [float(row[1]) for row in data]  # extract the y values
 
-/*
+print(x)
+
+plt.plot(x, y)
+plt.xlabel("x")
+plt.ylabel("y")
+plt.show()
+
+'''
 #include "filter_df2t_fixp.h"
 typedef ap_fixed<32,16> data_t;
 typedef ap_fixed<32,16> y_i_t;
@@ -108,9 +126,7 @@ void filter_df2t_fixp (hls::stream<AXI_VAL>& y, hls::stream<AXI_VAL>& x) {
 		}
 	}
 }
-
-*/
-
+'''
 
 
 

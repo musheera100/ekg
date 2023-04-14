@@ -1,7 +1,3 @@
-
-
-
-/*
 #include "filter_df2t_fixp.h"
 typedef ap_fixed<32,16> data_t;
 typedef ap_fixed<32,16> y_i_t;
@@ -109,7 +105,7 @@ void filter_df2t_fixp (hls::stream<AXI_VAL>& y, hls::stream<AXI_VAL>& x) {
 	}
 }
 
-*/
+
 
 
 
