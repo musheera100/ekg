@@ -24,3 +24,5 @@ verify the output and export the results to a csv so it could be read into MATLA
 5. The folder labelled VIVADO_FILES contains various files related to the 
 VIVADO implementations of the lowpass and highpass filters. 
 This includes block diagram pdfs, .coe files, and overlay files (.tcl, .bit, and .hwh).
+
+6. Our Final Project Presentation
