@@ -1,3 +1,8 @@
+FINAL PROJECT REPORT: SEE FINAL PROJECT REPORT FOLDER
+ - Readme in folder explains contents
+
+
+
 PRELIMINARY FINAL REPORT: See Preliminary Project Report Folder
 
 - Folder is divided into MATLAB, VITIS/C code, and Python code
