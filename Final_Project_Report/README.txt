@@ -1,7 +1,8 @@
 This folder contains all of the code for our final project.
 
 1. The folder labelled JUPYTER_NOTEBOOK contains the final working Jupyter notebook, 
-as well as all the files needed in order to implement the lowpass and highpass filter overlays.
+as well as all the files needed in order to implement the lowpass and highpass filter overlays. 
+It also includes the ECG_good.csv file that was used as an input for the notebook. 
 
 2. The folder labelled MATLAB_CODE contains the MATLAB code used to generate the filter a and b coefficients, 
 and to determine the error of the FPGA filter implementation. 
