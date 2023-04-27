@@ -14,7 +14,7 @@ for our filter coefficients and tapped delay line.
 
 3. The folder labelled PYTHON_CODE contains the Python implementation of the 
 Direct Form II Transposed filter function which was used to benchmark 
-hardware performance in the Jupyter notebook.
+hardware performance in the Jupyter notebook and source code for arrythmia detection.
 
 4. The folder labelled VITIS_C_CODE contains three subfolders: 
 one for the lowpass filter (.cpp and .h), 
